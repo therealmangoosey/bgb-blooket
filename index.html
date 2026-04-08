@@ -1,0 +1,399 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blooket: Big Group Bruh Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1976d2;
+            --accent: #ffca28;
+            --success: #4caf50;
+            --danger: #f44336;
+            --bg: #0b0e11;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ═════════════════ BACKGROUND ANIMATION ═════════════════ */
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-orb {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            from { transform: translateY(110vh) rotate(0deg); }
+            to { transform: translateY(-20vh) rotate(360deg); }
+        }
+
+        /* ═════════════════ SCREEN LAYOUTS ═════════════════ */
+        .screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* ═════════════════ UI COMPONENTS ═════════════════ */
+        .logo {
+            font-family: 'Titan One', cursive;
+            font-size: clamp(3rem, 10vw, 5rem);
+            color: white;
+            text-shadow: 0 8px 0 #0d47a1;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .btn {
+            font-family: 'Titan One', cursive;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            background: var(--accent);
+            color: #333;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 6px 0 #b7950b;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-transform: uppercase;
+            margin: 10px;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #b7950b;
+        }
+
+        .btn-large {
+            padding: 20px 60px;
+            font-size: 1.5rem;
+            box-shadow: 0 8px 0 #b7950b;
+        }
+
+        .selection-group {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* ═════════════════ TRIVIA GAMEPLAY ═════════════════ */
+        .question-box {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 25px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 30px;
+            box-shadow: 0 12px 0 rgba(0,0,0,0.2);
+        }
+
+        .question-text {
+            font-size: 1.6rem;
+            font-weight: 900;
+            line-height: 1.3;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .option-btn {
+            padding: 25px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            color: white;
+            transition: filter 0.2s, transform 0.1s;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-btn:nth-child(1) { background: #e91e63; }
+        .option-btn:nth-child(2) { background: #2196f3; }
+        .option-btn:nth-child(3) { background: #ff9800; }
+        .option-btn:nth-child(4) { background: #4caf50; }
+
+        .score-bar {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 900;
+            font-size: 1.2rem;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+
+        /* ═════════════════ FEEDBACK ═════════════════ */
+        .feedback {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Titan One', cursive;
+            font-size: 5rem;
+            pointer-events: none;
+        }
+
+        .feedback.correct { background: rgba(76, 175, 80, 0.95); display: flex; color: white; }
+        .feedback.wrong { background: rgba(244, 67, 54, 0.95); display: flex; color: white; }
+
+        .game-over-card {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 0 rgba(0,0,0,0.3);
+        }
+
+        .screenshot-hint {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            font-weight: 700;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="bg-pattern" id="bg-canvas"></div>
+
+<div class="score-bar" id="score-bar" style="display: none;">
+    <div id="q-count">Question: 1/--</div>
+    <div id="current-score">Score: 0</div>
+</div>
+
+<!-- START SCREEN -->
+<div class="screen active" id="screen-start">
+    <div class="logo">BGB<br>BLOOKET</div>
+    
+    <div class="selection-group">
+        <p style="font-weight: 900; margin-bottom: 10px;">SELECT QUESTION COUNT:</p>
+        <div style="display: flex; justify-content: center; gap: 5px;">
+            <button class="btn" onclick="setQCount(5)" id="btn-5">5</button>
+            <button class="btn" onclick="setQCount(10)" id="btn-10">10</button>
+            <button class="btn" onclick="setQCount(15)" id="btn-15" style="border: 3px solid white;">15</button>
+        </div>
+    </div>
+
+    <button class="btn btn-large" onclick="startGame()">Host Game</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="screen-game">
+    <div class="question-box">
+        <div id="question-label" style="font-size: 0.8rem; color: #888; margin-bottom: 10px; text-transform: uppercase; font-weight: 700;">Who said this?</div>
+        <div class="question-text" id="active-question">"Loading..."</div>
+    </div>
+    <div class="options-grid" id="options-grid"></div>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div class="screen" id="screen-end">
+    <div class="game-over-card">
+        <h1 style="font-family: 'Titan One'; font-size: 3rem; margin-bottom: 10px; color: #1976d2;">FINISH!</h1>
+        <div id="final-stats">
+            <p style="font-weight: 800; font-size: 1.2rem;">Total Correct: <span id="final-correct">0</span></p>
+            <p style="font-family: 'Titan One'; font-size: 3.5rem; margin: 10px 0; color: #ff9800;">Score: <span id="final-score">0</span></p>
+        </div>
+        
+        <div class="screenshot-hint">
+            📸 SCREENSHOT THIS & SEND TO THE GC!<br>
+            <span style="font-size: 0.8rem;">Compare your rank with the other bruhs.</span>
+        </div>
+
+        <button class="btn" onclick="location.reload()" style="margin-top: 30px;">Play Again</button>
+    </div>
+</div>
+
+<div class="feedback" id="feedback-correct">
+    <div>CORRECT!</div>
+    <div style="font-size: 2rem;">+1,000 pts</div>
+</div>
+<div class="feedback" id="feedback-wrong">
+    <div>OOF...</div>
+    <div id="correct-reveal" style="font-size: 1.5rem; margin-top: 10px;">It was [Name]</div>
+</div>
+
+<script>
+// ═════════════════ DATA LOAD ═════════════════
+const DATABASE = [
+    { q: "I hope the evil witch of north america puts a curse on your bloodline.", a: "Leon", o: ["Charlie", "Josephy", "Lloyd"] },
+    { q: "One time I shoved a pencil up my ass and then clenched and it shot out and made a hole in my wall.", a: "Josephy", o: ["Leon", "Matilda", "Emma"] },
+    { q: "O Leon! Thou perfidious, serpent-tongued wretch, what manner of treachery hath taken root within that hollow chest of thine...", a: "Charlie", o: ["Mohammed", "Autumn", "Lloyd"] },
+    { q: "EVERY TIME I HICCUP I BURP IT WONT STOO", a: "Ruby", o: ["Emma", "Matilda", "Evie"] },
+    { q: "I teleported 4 hours into the future. This keeps happening.", a: "Leon", o: ["Mohammed", "Elias", "Josephy"] },
+    { q: "Wrestling is a sex fest. it was made for gay men to blend in into straight men culture.", a: "Mohammed", o: ["Leon", "Charlie", "Lloyd"] },
+    { q: "I did NOT suck on Ruby's tits*", a: "Charlie", o: ["Leon", "Josephy", "Emile"] },
+    { q: "MY WIFE JUST RAN OUT AND THEN GOT ATTACKED BY A GINGER. AT LEAST SHE'S IRISH.", a: "Emma", o: ["Ruby", "Matilda", "Autumn"] },
+    { q: "Am I the only one who lowkey wants a school shooting to happen... Gulp.", a: "Autumn", o: ["Elias", "Ruby", "Kian"] },
+    { q: "I lost streak. Gg. (After 18 minutes of no-gooning)", a: "Josephy", o: ["Leon", "Charlie", "Lloyd"] },
+    { q: "I just found out a test they had me do at the hospital is to look for a brain tumour.", a: "Emma", o: ["Ruby", "Matilda", "Leon"] },
+    { q: "Bro said cutting myself is too basic let's set me on fire.", a: "Lloyd", o: ["Emile", "Josephy", "Leon"] },
+    { q: "Icl ts pmo sm n sb rn ngl.", a: "Elias", o: ["Mohammed", "Autumn", "Kian"] },
+    { q: "MATILDA A HOE", a: "Leon", o: ["Charlie", "Josephy", "Lloyd"] },
+    { q: "I hope you sneeze out a metal rod and it destroys your organs in the process.", a: "Leon", o: ["Emma", "Charlie", "Ruby"] },
+    { q: "Leon put me in the group and not kian he knows who the alpha is.", a: "Josephy", o: ["Charlie", "Mohammed", "Elias"] },
+    { q: "I tried to eat soap but it tasted like nothing.", a: "Ruby", o: ["Matilda", "Emma", "Leon"] },
+    { q: "The thing is my house is so cold that I turn on the oven and sit in front of it.", a: "Charlie", o: ["Leon", "Ruby", "Emma"] }
+];
+
+// ═════════════════ GAME STATE ═════════════════
+let currentQ = 0;
+let score = 0;
+let correctCount = 0;
+let gamePool = [];
+let targetQCount = 15;
+
+function setQCount(count) {
+    targetQCount = count;
+    [5, 10, 15].forEach(num => {
+        document.getElementById(`btn-${num}`).style.border = (num === count) ? '3px solid white' : 'none';
+    });
+}
+
+// Generate background orbs
+const bg = document.getElementById('bg-canvas');
+for(let i=0; i<15; i++){
+    const orb = document.createElement('div');
+    orb.className = 'floating-orb';
+    let size = Math.random() * 100 + 50;
+    orb.style.width = size + 'px';
+    orb.style.height = size + 'px';
+    orb.style.left = Math.random() * 100 + 'vw';
+    orb.style.animationDuration = (Math.random() * 10 + 10) + 's';
+    orb.style.animationDelay = (Math.random() * 5) + 's';
+    bg.appendChild(orb);
+}
+
+function startGame() {
+    gamePool = [...DATABASE].sort(() => Math.random() - 0.5).slice(0, targetQCount);
+    currentQ = 0;
+    score = 0;
+    correctCount = 0;
+    
+    document.getElementById('screen-start').classList.remove('active');
+    document.getElementById('screen-game').classList.add('active');
+    document.getElementById('score-bar').style.display = 'flex';
+    
+    showQuestion();
+}
+
+function showQuestion() {
+    const data = gamePool[currentQ];
+    document.getElementById('active-question').innerText = data.q;
+    document.getElementById('q-count').innerText = `Question: ${currentQ + 1}/${gamePool.length}`;
+    document.getElementById('current-score').innerText = `Score: ${score}`;
+
+    const options = [data.a, ...data.o].sort(() => Math.random() - 0.5);
+    const grid = document.getElementById('options-grid');
+    grid.innerHTML = '';
+    
+    options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(opt, data.a);
+        grid.appendChild(btn);
+    });
+}
+
+function checkAnswer(chosen, correct) {
+    const isCorrect = chosen === correct;
+    const fbId = isCorrect ? 'feedback-correct' : 'feedback-wrong';
+    const fb = document.getElementById(fbId);
+    
+    if(!isCorrect) {
+        document.getElementById('correct-reveal').innerText = `Actually, it was ${correct}`;
+    }
+
+    if(isCorrect) {
+        score += 1000;
+        correctCount++;
+    }
+    
+    fb.style.display = 'flex';
+    
+    setTimeout(() => {
+        fb.style.display = 'none';
+        nextQuestion();
+    }, 1500);
+}
+
+function nextQuestion() {
+    currentQ++;
+    if(currentQ < gamePool.length) {
+        showQuestion();
+    } else {
+        endGame();
+    }
+}
+
+function endGame() {
+    document.getElementById('score-bar').style.display = 'none';
+    document.getElementById('screen-game').classList.remove('active');
+    document.getElementById('screen-end').classList.add('active');
+    
+    document.getElementById('final-score').innerText = score.toLocaleString();
+    document.getElementById('final-correct').innerText = `${correctCount}/${gamePool.length}`;
+}
+</script>
+</body>
+</html>
+
+```
